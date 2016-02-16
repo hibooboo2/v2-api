@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	"github.com/rancher/go-rancher/client"
 	"github.com/rancher/v2-api/model"
@@ -10,6 +11,7 @@ import (
 
 func (s *Server) ServiceByID(rw http.ResponseWriter, r *http.Request) error {
 	vars := mux.Vars(r)
+	logrus.Debugf("Vars: %#v", vars)
 	return s.getService(rw, r, vars["id"])
 }
 

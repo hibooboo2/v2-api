@@ -19,8 +19,8 @@ func New(s *server.Server) *mux.Router {
 	router.Methods("GET").Path("/v2").Handler(api.VersionHandler(schemas, "v2"))
 
 	f := s.HandlerFunc
-	router.Methods("GET").Path("/v2/services").Handler(f(schemas, s.ServiceList))
-	router.Methods("GET").Path("/v2/service").Handler(f(schemas, s.ServiceList))
+	router.Methods("GET").Path("/v2/environments/{envID}/services").Handler(f(schemas, s.ServiceList))
+	router.Methods("GET").Path("/v2/environments/{envID}/service").Handler(f(schemas, s.ServiceList))
 
 	return router
 }
