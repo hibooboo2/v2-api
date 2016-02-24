@@ -33,7 +33,7 @@ func APIAuthenticator(w http.ResponseWriter, r *http.Request) error {
 			}
 		}
 	}
-	logrus.Debugf("Policy is: %v %v %v %v", ctx.Policy.AccountID, ctx.Policy.AuthenticatedAsAccountID,
+	logrus.Debugf("Policy is: %v %v %v %#v", ctx.Policy.AccountID, ctx.Policy.AuthenticatedAsAccountID,
 		ctx.Policy.Username, len(ctx.Policy.Identities))
 	return nil
 }

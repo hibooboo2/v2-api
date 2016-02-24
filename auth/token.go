@@ -74,8 +74,6 @@ func getPolicy(tokenKey string, r *http.Request) (*api.Policy, error) {
 	query := `SELECT *
 			FROM auth_token
 			WHERE auth_token.key = ?`
-	logrus.Debugf("query : %v", query)
-	logrus.Debugf("DB driver: %v", sqlxConn.DriverName())
 	err := sqlxConn.Get(&gotToken, query, tokenKey)
 	if err != nil {
 		return nil, err

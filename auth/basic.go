@@ -13,7 +13,7 @@ import (
 	"github.com/rancher/go-rancher/api"
 )
 
-const rancherID = "rancher_id:%v"
+const rancherID = "rancher_id"
 
 func basicAuth(w http.ResponseWriter, r *http.Request) error {
 	username, password, authFound := r.BasicAuth()
@@ -24,7 +24,7 @@ func basicAuth(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return errors.New("No account found.")
 	}
-	policy, err := createPolicy(accountID, "", []string{fmt.Sprintf(rancherID, accountID)}, r)
+	policy, err := createPolicy(accountID, "", []string{fmt.Sprintf("%v:%v", rancherID, accountID)}, r)
 
 	if err != nil {
 		return err

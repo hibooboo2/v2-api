@@ -9,14 +9,13 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
 	"github.com/rancher/go-rancher/client"
-	"github.com/rancher/v2-api/vendor/github.com/gorilla/mux"
 )
 
 func forwardAuthToCattle(w http.ResponseWriter, r *http.Request) error {
 	var url string
-	vars := mux.Vars(r)
-	if env, ok := vars["envID"]; ok {
-		url = fmt.Sprintf("http://localhost:8080/v1/projects/%v/apirequestpolicy?%v", env, r.URL.RawQuery)
+	projectID := getProjectIDString(r)
+	if projectID != "" {
+		url = fmt.Sprintf("http://localhost:8080/v1/projects/%v/apirequestpolicy?%v", projectID, r.URL.RawQuery)
 	} else {
 		url = "http://localhost:8080/v1/apirequestpolicy?" + r.URL.RawQuery
 	}

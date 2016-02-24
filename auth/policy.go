@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/go-rancher/api"
 	"github.com/rancher/go-rancher/client"
+	"strings"
 )
 
 func createPolicy(accountID int64, username string, identitiesAsIds []string, r *http.Request) (*api.Policy, error) {
@@ -21,7 +22,7 @@ func createPolicy(accountID int64, username string, identitiesAsIds []string, r 
 		return &api.Policy{
 			AuthenticatedAsAccountID: accountID,
 			AccountID:                accountID,
-			Identities:               []api.Identity{},
+			Identities:               fromIdentityIds(identitiesAsIds),
 			Username:                 username,
 		}, nil
 	}
@@ -36,7 +37,16 @@ func createPolicy(accountID int64, username string, identitiesAsIds []string, r 
 	return &api.Policy{
 		AuthenticatedAsAccountID: accountID,
 		AccountID:                projectID,
-		Identities:               []api.Identity{},
+		Identities:               fromIdentityIds(identitiesAsIds),
 		Username:                 username,
 	}, nil
+}
+
+func fromIdentityIds(identitiesAsIds []string) []api.Identity {
+	identities := []api.Identity{}
+	for _, id := range identitiesAsIds {
+		spiltID := strings.SplitN(id, ":", 2)
+		identities = append(identities, api.Identity{ExternalID: spiltID[1], ExternalIDType: spiltID[0]})
+	}
+	return identities
 }

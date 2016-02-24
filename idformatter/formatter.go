@@ -3,7 +3,6 @@ package idformatter
 import (
 	"regexp"
 	"strings"
-	"sync"
 	"unicode"
 	"unicode/utf8"
 
@@ -20,8 +19,6 @@ type TypeIDFormatter struct {
 	globalPrefix   string
 	shortTypeCache map[string]string
 	plainTypes     map[string]string
-	lockCache      sync.RWMutex
-	lockTypes      sync.RWMutex
 }
 
 func NewFormatter() api.IDFormatter {
@@ -29,8 +26,6 @@ func NewFormatter() api.IDFormatter {
 		globalPrefix:   defaultGlobalPrefix,
 		shortTypeCache: make(map[string]string),
 		plainTypes:     make(map[string]string),
-		lockCache:      sync.RWMutex{},
-		lockTypes:      sync.RWMutex{},
 	}
 	return &formatter
 }
@@ -40,9 +35,7 @@ func (formatter *TypeIDFormatter) FormatID(id, idType string, schemas *client.Sc
 		return ""
 	}
 
-	formatter.lockTypes.RLock()
 	_, ok := formatter.plainTypes[idType]
-	formatter.lockTypes.RUnlock()
 	if ok {
 		return id
 	}
@@ -86,9 +79,7 @@ func (formatter *TypeIDFormatter) ParseID(id string) string {
 
 func (formatter *TypeIDFormatter) getShortType(idType string, schemas *client.Schemas) string {
 	orginalType := idType
-	formatter.lockCache.RLock()
 	schemaType, ok := formatter.shortTypeCache[idType]
-	formatter.lockCache.RUnlock()
 	if ok {
 		return schemaType
 	}
@@ -101,8 +92,6 @@ func (formatter *TypeIDFormatter) getShortType(idType string, schemas *client.Sc
 
 	shortType := formatter.globalPrefix + string(idType[0]) + regexForFormat.ReplaceAllString(idType, "")
 	shortType = strings.ToLower(shortType)
-	formatter.lockCache.Lock()
 	formatter.shortTypeCache[orginalType] = shortType
-	formatter.lockCache.Unlock()
 	return shortType
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/rancher/go-rancher/api"
 )
 
-const memberQuery = `(external_id='%v' and external_id_type='%v' and state='active' and removed is null)`
+const memberQuery = `(external_id= ? and external_id_type= ? and state='active' and removed is null)`
 
 func hasAccessToProject(projectID, usingAccount int64, isAdmin bool, identityIds []string) bool {
 	logrus.Debugf("Project ID: %v Using %v ISADMIN %v Identities: %#v", projectID, usingAccount, isAdmin, len(identityIds))
@@ -24,17 +24,21 @@ func hasAccessToProject(projectID, usingAccount int64, isAdmin bool, identityIds
 		logrus.Debugf("Is admin or self.")
 		return true
 	}
-	query := fmt.Sprintf(`SELECT * from project_member where project_id='%v' and ( `, projectID)
+	query := `SELECT * from project_member where project_id= ? and ( `
+	args := []interface{}{projectID}
 	for _, identityID := range identityIds {
 		spiltID := strings.Split(identityID, ":")
-		query = query + fmt.Sprintf(memberQuery, spiltID[1], spiltID[0]) + " or "
+		args = append(args, spiltID[1])
+		args = append(args, spiltID[0])
+		query = query + memberQuery + " or "
 	}
 	query = strings.TrimSuffix(query, " or ") + " )"
-	logrus.Debugf("Query is: %s", query)
-	rows, err := sqlxConn.Query(query)
+	rows, err := sqlxConn.Query(query, args...)
 	if err != nil {
+		logrus.Debugf("Error getting members for project: %#v", err)
 		return false
 	}
+	defer rows.Close()
 	return rows.Next()
 }
 
@@ -47,25 +51,8 @@ func (e *NoSpecifiedProject) Error() string {
 var NOProjectSpecified = &NoSpecifiedProject{}
 
 func getProjectID(r *http.Request, formatter api.IDFormatter) (int64, error) {
-	projectID := ""
 
-	theVars := mux.Vars(r)
-	logrus.Debugf("Env from url: %v PATH: %v All Vars: %#v", theVars["envID"], r.URL.Path, theVars)
-	projectID = theVars["envID"]
-
-	if projectID == "" && strings.HasPrefix(r.URL.Path, "/v2/environments/") {
-		projectID = strings.SplitN(strings.TrimPrefix(r.URL.Path, "/v2/environments/"), "/", 2)[0]
-	}
-
-	if projectID == "" {
-		logrus.Debugf("Env from header: %v", r.Header.Get(projectIDHeader))
-		projectID = r.Header.Get(projectIDHeader)
-	}
-
-	if projectID == "" {
-		logrus.Debugf("Env from query: %v", r.URL.Query().Get("projectId"))
-		projectID = r.URL.Query().Get("projectId")
-	}
+	projectID := getProjectIDString(r)
 
 	if projectID == "" {
 		return 0, NOProjectSpecified
@@ -89,6 +76,33 @@ func getProjectID(r *http.Request, formatter api.IDFormatter) (int64, error) {
 	}
 
 	return 0, errors.New("Project not found.")
+}
+
+func getProjectIDString(r *http.Request) string {
+	projectID := ""
+
+	theVars := mux.Vars(r)
+	projectID, ok := theVars["envID"]
+	if !ok {
+		logrus.Debugf("Env from url: %#v PATH: %v All Vars: %#v", theVars["envID"], r.URL.Path, theVars)
+	}
+
+	if projectID == "" && strings.HasPrefix(r.URL.Path, "/v2/environments/") {
+		projectID = strings.SplitN(strings.TrimPrefix(r.URL.Path, "/v2/environments/"), "/", 2)[0]
+		logrus.Debugf("Using manual url parsing for project: %v", projectID)
+	}
+
+	if projectID == "" {
+		logrus.Debugf("Env from header: %v", r.Header.Get(projectIDHeader))
+		projectID = r.Header.Get(projectIDHeader)
+	}
+
+	if projectID == "" {
+		logrus.Debugf("Env from query: %v", r.URL.Query().Get("projectId"))
+		projectID = r.URL.Query().Get("projectId")
+	}
+
+	return projectID
 }
 
 const projectIDHeader = "X-API-Project-Id"
