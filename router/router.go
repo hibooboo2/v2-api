@@ -21,6 +21,7 @@ func New(s *server.Server) *mux.Router {
 	f := s.HandlerFunc
 	router.Methods("GET").Path("/v2/environments/{envID}/services").Handler(f(schemas, s.ServiceList))
 	router.Methods("GET").Path("/v2/environments/{envID}/service").Handler(f(schemas, s.ServiceList))
+	router.Methods("GET").Path("/v2/environments/{envID}/dashboard").Handler(f(schemas, s.DashBoard))
 
 	return router
 }
